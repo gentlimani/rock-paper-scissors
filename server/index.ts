@@ -42,6 +42,9 @@ const playerNames = new Map<string, string>();
 // Spectators map: socketId -> roomId they're watching
 const spectators = new Map<string, string>();
 
+// Track which games have already recorded their final result (to prevent double-counting)
+const gamesRecorded = new Set<string>();
+
 // Helper function to generate room ID
 const generateRoomId = (): string => {
   return `room_${Math.random().toString(36).substring(2, 9)}`;
@@ -255,6 +258,7 @@ io.on('connection', (socket) => {
     const [player1, player2] = gameState.players;
     const move1 = gameState.moves[player1.id];
     const move2 = gameState.moves[player2.id];
+    const WINNING_SCORE = 2; // First to 2 wins
 
     if (move1 && move2) {
       const result = calculateWinner(move1, move2);
@@ -263,24 +267,26 @@ io.on('connection', (socket) => {
       if (result === 'p1') {
         winnerId = player1.id;
         player1.score += 1;
-        // Record stats (only for non-bot games)
-        if (!botPlayers.has(roomId)) {
-          await recordWin(player1.name);
-          await recordLoss(player2.name);
-        }
       } else if (result === 'tie') {
         winnerId = null;
-        if (!botPlayers.has(roomId)) {
-          await recordTie(player1.name);
-          await recordTie(player2.name);
-        }
       } else {
         winnerId = player2.id;
         player2.score += 1;
-        if (!botPlayers.has(roomId)) {
-          await recordWin(player2.name);
-          await recordLoss(player1.name);
-        }
+      }
+
+      // Check if someone won the GAME (best of 3)
+      if (player1.score >= WINNING_SCORE && !gamesRecorded.has(roomId)) {
+        // Player 1 wins the game
+        gamesRecorded.add(roomId);
+        console.log(`GAME WON: ${player1.name} beat ${player2.name} (${player1.score}-${player2.score})`);
+        await recordWin(player1.name);
+        await recordLoss(player2.name);
+      } else if (player2.score >= WINNING_SCORE && !gamesRecorded.has(roomId)) {
+        // Player 2 wins the game
+        gamesRecorded.add(roomId);
+        console.log(`GAME WON: ${player2.name} beat ${player1.name} (${player2.score}-${player1.score})`);
+        await recordWin(player2.name);
+        await recordLoss(player1.name);
       }
 
       // Emit round result to both players
@@ -326,8 +332,15 @@ io.on('connection', (socket) => {
     const gameState = gameStore.get(playerRoom);
     if (!gameState) return;
 
+    // Reset game state for new match
     gameState.moves = {};
     gameState.status = 'waiting';
+    // Reset player scores for new game
+    gameState.players.forEach((p: Player) => {
+      p.score = 0;
+    });
+    // Clear the recorded flag so new game can be tracked
+    gamesRecorded.delete(playerRoom);
 
     const opponent = gameState.players.find((p: Player) => p.id !== socket.id);
     if (opponent) {
@@ -370,6 +383,7 @@ io.on('connection', (socket) => {
 
         socket.leave(roomId);
         botPlayers.delete(roomId);
+        gamesRecorded.delete(roomId);
         gameStore.delete(roomId);
         console.log(`Room ${roomId} cleaned up due to quit`);
         
@@ -517,6 +531,7 @@ io.on('connection', (socket) => {
         }
 
         botPlayers.delete(roomId);
+        gamesRecorded.delete(roomId);
         gameStore.delete(roomId);
         console.log(`Room ${roomId} cleaned up due to disconnect`);
         

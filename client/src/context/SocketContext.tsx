@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { ServerToClientEvents, ClientToServerEvents, GameState } from '@shared/types';
+import sounds from '../utils/sounds';
 
 interface SocketContextType {
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
@@ -62,6 +63,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     socketInstance.on('match_found', (data) => {
       console.log('Match found:', data);
+      sounds.matchFound();
       setIsSearching(false);
       setOpponentId(data.opponentId);
       // Initialize game state only if new game (preserve scores for play again)
@@ -119,6 +121,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     socketInstance.on('opponent_left', () => {
       console.log('Opponent left');
+      sounds.opponentLeft();
       alert('Opponent disconnected. Returning to lobby...');
       setGameState(null);
       setOpponentId(null);

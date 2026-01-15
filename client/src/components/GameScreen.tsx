@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { HandSelection } from './HandSelection';
 import { RetroBackground } from './RetroBackground';
 import { AsciiDisplay } from './AsciiArt';
+import sounds from '../utils/sounds';
 import type { GameState } from '@shared/types';
 
 interface GameScreenProps {
@@ -17,12 +18,7 @@ interface GameScreenProps {
 
 type Move = 'rock' | 'paper' | 'scissors' | null;
 
-const getMoveEmoji = (move: Move) => {
-  if (move === 'rock') return '✊';
-  if (move === 'paper') return '✋';
-  if (move === 'scissors') return '✌️';
-  return '?';
-};
+const WINNING_SCORE = 2; // First to 2 wins
 
 export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgain, onQuit }: GameScreenProps) => {
   const { socket } = useSocket();
@@ -35,9 +31,31 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
   } | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [isRevealing, setIsRevealing] = useState(false);
+  const [gameWinner, setGameWinner] = useState<'me' | 'opponent' | null>(null);
 
   const myPlayer = gameState.players.find(p => p.id === myId);
   const opponentPlayer = gameState.players.find(p => p.id === opponentId);
+
+  // Check for game winner
+  useEffect(() => {
+    const myScore = myPlayer?.score || 0;
+    const oppScore = opponentPlayer?.score || 0;
+    
+    if (myScore >= WINNING_SCORE && !gameWinner) {
+      setGameWinner('me');
+      sounds.gameWin();
+    } else if (oppScore >= WINNING_SCORE && !gameWinner) {
+      setGameWinner('opponent');
+      sounds.gameLose();
+    }
+  }, [myPlayer?.score, opponentPlayer?.score, gameWinner]);
+
+  // Request leaderboard update after each round
+  useEffect(() => {
+    if (showResult && socket) {
+      socket.emit('get_leaderboard');
+    }
+  }, [showResult, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -53,6 +71,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
       
       // Start reveal animation
       setIsRevealing(true);
+      sounds.reveal();
       
       // Reveal both moves simultaneously after countdown
       setTimeout(() => {
@@ -61,16 +80,27 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
         setRoundResult(data);
         setShowResult(true);
         setIsRevealing(false);
+        
+        // Play appropriate sound
+        if (data.winnerId === null) {
+          sounds.tie();
+        } else if (data.winnerId === myId) {
+          sounds.roundWin();
+        } else {
+          sounds.roundLose();
+        }
       }, 1000);
 
-      // Reset after showing result
+      // Reset after showing result (only if no game winner)
       setTimeout(() => {
-        setMyMove(null);
-        setRevealedMyMove(null);
-        setRevealedOpponentMove(null);
-        setRoundResult(null);
-        setShowResult(false);
-      }, 5000);
+        if (!gameWinner) {
+          setMyMove(null);
+          setRevealedMyMove(null);
+          setRevealedOpponentMove(null);
+          setRoundResult(null);
+          setShowResult(false);
+        }
+      }, 3000);
     };
 
     socket.on('round_result', handleRoundResult);
@@ -78,17 +108,126 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
     return () => {
       socket.off('round_result', handleRoundResult);
     };
-  }, [socket, gameState.players, myId]);
+  }, [socket, gameState.players, myId, gameWinner]);
 
   const handleMoveSelect = (move: 'rock' | 'paper' | 'scissors') => {
-    if (myMove || !socket) return;
+    if (myMove || !socket || gameWinner) return;
     
+    sounds.select();
     setMyMove(move);
     socket.emit('submit_move', { move });
   };
 
-  const isMyTurn = !myMove && !showResult && !isRevealing;
+  const handleNewGame = () => {
+    setMyMove(null);
+    setRevealedMyMove(null);
+    setRevealedOpponentMove(null);
+    setRoundResult(null);
+    setShowResult(false);
+    setGameWinner(null);
+    sounds.click();
+    onPlayAgain();
+  };
+
+  const isMyTurn = !myMove && !showResult && !isRevealing && !gameWinner;
   const waitingForOpponent = myMove && !showResult && !isRevealing;
+
+  // Game Over Screen
+  if (gameWinner) {
+    return (
+      <div className="min-h-screen p-4 relative overflow-hidden">
+        <RetroBackground />
+        <div className="fixed inset-0 pointer-events-none z-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyIiBoZWlnaHQ9IjIiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4xKSIvPjwvc3ZnPg==')] opacity-30" />
+        <div className="max-w-4xl mx-auto relative z-20 flex flex-col items-center justify-center min-h-screen">
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-center"
+          >
+            {gameWinner === 'me' ? (
+              <>
+                <motion.pre
+                  initial={{ y: -50 }}
+                  animate={{ y: 0 }}
+                  className="text-cyan-400 font-mono text-xs md:text-sm mb-8"
+                >
+{`
+╔════════════════════════════════════════╗
+║                                        ║
+║     ██╗   ██╗██╗ ██████╗████████╗      ║
+║     ██║   ██║██║██╔════╝╚══██╔══╝      ║
+║     ██║   ██║██║██║        ██║         ║
+║     ╚██╗ ██╔╝██║██║        ██║         ║
+║      ╚████╔╝ ██║╚██████╗   ██║         ║
+║       ╚═══╝  ╚═╝ ╚═════╝   ╚═╝         ║
+║                                        ║
+╚════════════════════════════════════════╝
+`}
+                </motion.pre>
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="text-6xl mb-4"
+                >
+                  <AsciiDisplay type="win" color="text-cyan-400" size="lg" />
+                </motion.div>
+                <p className="text-cyan-400 font-mono text-2xl mb-2">CONGRATULATIONS!</p>
+                <p className="text-gray-400 font-mono">Final Score: {myPlayer?.score} - {opponentPlayer?.score}</p>
+              </>
+            ) : (
+              <>
+                <motion.pre
+                  initial={{ y: -50 }}
+                  animate={{ y: 0 }}
+                  className="text-red-400 font-mono text-xs md:text-sm mb-8"
+                >
+{`
+╔════════════════════════════════════════╗
+║                                        ║
+║     ██████╗ ███████╗███████╗███████╗   ║
+║     ██╔══██╗██╔════╝██╔════╝██╔════╝   ║
+║     ██║  ██║█████╗  █████╗  █████╗     ║
+║     ██║  ██║██╔══╝  ██╔══╝  ██╔══╝     ║
+║     ██████╔╝███████╗██║     ███████╗   ║
+║     ╚═════╝ ╚══════╝╚═╝     ╚══════╝   ║
+║                                        ║
+╚════════════════════════════════════════╝
+`}
+                </motion.pre>
+                <motion.div
+                  animate={{ y: [0, 5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <AsciiDisplay type="lose" color="text-red-400" size="lg" />
+                </motion.div>
+                <p className="text-red-400 font-mono text-2xl mb-2 mt-4">GAME OVER</p>
+                <p className="text-gray-400 font-mono">Final Score: {myPlayer?.score} - {opponentPlayer?.score}</p>
+              </>
+            )}
+            
+            <div className="flex gap-4 justify-center mt-8">
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(0, 255, 255, 0.5)' }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleNewGame}
+                className="bg-black border-2 border-cyan-500 text-cyan-400 font-mono py-3 px-8 transition-all"
+              >
+                [R] REMATCH
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { sounds.click(); onQuit(); }}
+                className="bg-black border-2 border-red-500/50 hover:border-red-500 text-red-400 font-mono py-3 px-8 transition-all"
+              >
+                [Q] QUIT
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 relative overflow-hidden">
@@ -103,14 +242,14 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
           className="flex justify-between items-center mb-4"
         >
           <pre className="text-cyan-400 font-mono text-xs">
-{`╔═══════════════════╗
-║  R.P.S. ARENA     ║
-╚═══════════════════╝`}
+{`╔═══════════════════════════╗
+║  R.P.S. ARENA  [Best of 3] ║
+╚═══════════════════════════╝`}
           </pre>
           <motion.button
             whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}
             whileTap={{ scale: 0.95 }}
-            onClick={onQuit}
+            onClick={() => { sounds.click(); onQuit(); }}
             className="bg-black border-2 border-red-500/50 hover:border-red-500 text-red-400 font-mono py-2 px-4 transition-all"
           >
             [X] QUIT
@@ -135,6 +274,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
               <p className="text-5xl font-bold text-cyan-400 font-mono drop-shadow-[0_0_20px_rgba(0,255,255,0.8)]">
                 {myPlayer?.score || 0}
               </p>
+              <p className="text-cyan-600 text-xs font-mono mt-1">FIRST TO {WINNING_SCORE}</p>
             </motion.div>
             <div className="flex flex-col items-center">
               <AsciiDisplay type="vs" color="text-yellow-400" size="sm" />
@@ -145,11 +285,12 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
               transition={{ duration: 0.3 }}
             >
               <p className="text-magenta-400 text-sm mb-1 font-mono">
-                {opponentId?.startsWith('bot_') ? '🤖 CPU' : opponentPlayer?.name || 'OPPONENT'}
+                {opponentId?.startsWith('bot_') ? 'CPU' : opponentPlayer?.name || 'OPPONENT'}
               </p>
               <p className="text-5xl font-bold text-magenta-400 font-mono drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]">
                 {opponentPlayer?.score || 0}
               </p>
+              <p className="text-magenta-600 text-xs font-mono mt-1">FIRST TO {WINNING_SCORE}</p>
             </motion.div>
           </div>
         </motion.div>
@@ -163,20 +304,17 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
               exit={{ scale: 0, opacity: 0 }}
               className="text-center mb-6"
             >
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 0.5, repeat: 2 }}
-                className="text-7xl mb-2 drop-shadow-[0_0_30px_rgba(234,179,8,0.8)]"
+              <motion.pre
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.3, repeat: 3 }}
+                className="text-yellow-400 font-mono text-lg"
               >
-                🎯
-              </motion.div>
-              <motion.p
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 0.3, repeat: Infinity }}
-                className="text-2xl font-bold text-yellow-400"
-              >
-                Revealing...
-              </motion.p>
+{`
+  ╔═══════════════╗
+  ║  REVEALING... ║
+  ╚═══════════════╝
+`}
+              </motion.pre>
             </motion.div>
           )}
         </AnimatePresence>
@@ -187,106 +325,108 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
           <motion.div
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="bg-gray-800/60 backdrop-blur-xl border border-cyan-500/30 rounded-xl p-8 text-center shadow-lg shadow-cyan-500/10 relative overflow-hidden"
+            className="bg-black/80 border-2 border-cyan-500/30 p-6 text-center relative overflow-hidden"
+            style={{ boxShadow: '0 0 20px rgba(0,255,255,0.1)' }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
-            <h3 className="text-xl font-semibold text-cyan-400 mb-4 relative">{playerName}'s Hand</h3>
-            <AnimatePresence mode="wait">
-              {showResult && revealedMyMove ? (
-                <motion.div
-                  key={`revealed-${revealedMyMove}`}
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: 180 }}
-                  className="text-8xl relative drop-shadow-[0_0_20px_rgba(0,255,255,0.5)]"
-                >
-                  {getMoveEmoji(revealedMyMove)}
-                </motion.div>
-              ) : myMove ? (
-                <motion.div
-                  key="locked"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="flex flex-col items-center relative"
-                >
+            <h3 className="text-lg font-semibold text-cyan-400 mb-4 font-mono">[{playerName}]</h3>
+            <div className="min-h-[120px] flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {showResult && revealedMyMove ? (
                   <motion.div
-                    animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                    className="text-6xl mb-2 drop-shadow-[0_0_15px_rgba(0,255,255,0.5)]"
+                    key={`revealed-${revealedMyMove}`}
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    exit={{ scale: 0, rotate: 180 }}
                   >
-                    🤜
+                    <AsciiDisplay type={revealedMyMove} color="text-cyan-400" size="md" />
                   </motion.div>
-                  <span className="text-cyan-400 text-sm font-semibold bg-cyan-500/20 px-3 py-1 rounded-full">✓ Locked In</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="waiting"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="text-gray-500 text-6xl relative"
-                >
-                  ?
-                </motion.div>
-              )}
-            </AnimatePresence>
+                ) : myMove ? (
+                  <motion.div
+                    key="locked"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex flex-col items-center"
+                  >
+                    <motion.pre
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                      className="text-cyan-400 font-mono text-xs"
+                    >
+{`
+  ╔══════════════╗
+  ║  LOCKED IN!  ║
+  ╚══════════════╝
+`}
+                    </motion.pre>
+                  </motion.div>
+                ) : (
+                  <motion.pre
+                    key="waiting"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="text-gray-600 font-mono text-lg"
+                  >
+                    {'[ ? ]'}
+                  </motion.pre>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
 
           {/* Opponent Hand */}
           <motion.div
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="bg-gray-800/60 backdrop-blur-xl border border-magenta-500/30 rounded-xl p-8 text-center shadow-lg shadow-magenta-500/10 relative overflow-hidden"
+            className="bg-black/80 border-2 border-magenta-500/30 p-6 text-center relative overflow-hidden"
+            style={{ boxShadow: '0 0 20px rgba(236,72,153,0.1)' }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-magenta-500/5 to-transparent" />
-            <h3 className="text-xl font-semibold text-magenta-400 mb-4 relative">
-              {opponentId?.startsWith('bot_') ? '🤖 Bot' : 'Opponent'}
+            <h3 className="text-lg font-semibold text-magenta-400 mb-4 font-mono">
+              [{opponentId?.startsWith('bot_') ? 'CPU' : 'OPPONENT'}]
             </h3>
-            <AnimatePresence mode="wait">
-              {showResult && revealedOpponentMove ? (
-                <motion.div
-                  key={`revealed-${revealedOpponentMove}`}
-                  initial={{ scale: 0, rotate: 180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: -180 }}
-                  className="text-8xl relative drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]"
-                >
-                  {getMoveEmoji(revealedOpponentMove)}
-                </motion.div>
-              ) : waitingForOpponent ? (
-                <motion.div
-                  key="opponent-locked"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="flex flex-col items-center relative"
-                >
+            <div className="min-h-[120px] flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {showResult && revealedOpponentMove ? (
                   <motion.div
-                    animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                    className="text-6xl mb-2 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]"
+                    key={`revealed-${revealedOpponentMove}`}
+                    initial={{ scale: 0, rotate: 180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    exit={{ scale: 0, rotate: -180 }}
                   >
-                    🤛
+                    <AsciiDisplay type={revealedOpponentMove} color="text-magenta-400" size="md" />
                   </motion.div>
-                  <motion.span
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className="text-magenta-400 text-sm font-semibold bg-magenta-500/20 px-3 py-1 rounded-full"
+                ) : waitingForOpponent ? (
+                  <motion.div
+                    key="opponent-thinking"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex flex-col items-center"
                   >
-                    Thinking...
-                  </motion.span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="hidden"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                  className="text-gray-500 text-6xl relative"
-                >
-                  ?
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <motion.pre
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                      className="text-magenta-400 font-mono text-xs"
+                    >
+{`
+  ╔══════════════╗
+  ║  THINKING... ║
+  ╚══════════════╝
+`}
+                    </motion.pre>
+                  </motion.div>
+                ) : (
+                  <motion.pre
+                    key="hidden"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                    className="text-gray-600 font-mono text-lg"
+                  >
+                    {'[ ? ]'}
+                  </motion.pre>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         </div>
 
@@ -302,55 +442,38 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
               {roundResult.winnerId === null ? (
                 <motion.div
                   initial={{ y: 20 }}
-                  animate={{ y: 0, scale: [1, 1.1, 1] }}
-                  transition={{ duration: 0.5 }}
-                  className="bg-yellow-500/20 border border-yellow-500/50 rounded-2xl p-6 inline-block"
+                  animate={{ y: 0 }}
+                  className="inline-block"
                 >
-                  <motion.span
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 0.5, repeat: 3 }}
-                    className="text-5xl block mb-2"
-                  >
-                    🤝
-                  </motion.span>
-                  <p className="text-3xl font-bold text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]">
-                    It's a Tie!
-                  </p>
+                  <AsciiDisplay type="tie" color="text-yellow-400" size="md" />
                 </motion.div>
               ) : roundResult.winnerId === myId ? (
                 <motion.div
                   initial={{ y: 20 }}
-                  animate={{ y: 0, scale: [1, 1.1, 1] }}
-                  transition={{ duration: 0.5 }}
-                  className="bg-cyan-500/20 border border-cyan-500/50 rounded-2xl p-6 inline-block"
+                  animate={{ y: 0 }}
+                  className="inline-block"
                 >
-                  <motion.span
-                    animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 0.5, repeat: 3 }}
-                    className="text-5xl block mb-2"
-                  >
-                    🎉
-                  </motion.span>
-                  <p className="text-3xl font-bold text-cyan-400 drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">
-                    You Win!
-                  </p>
+                  <pre className="text-cyan-400 font-mono text-sm">
+{`
+  ╔═══════════════════╗
+  ║   ROUND  WIN!     ║
+  ╚═══════════════════╝
+`}
+                  </pre>
                 </motion.div>
               ) : (
                 <motion.div
                   initial={{ y: 20 }}
                   animate={{ y: 0 }}
-                  className="bg-magenta-500/20 border border-magenta-500/50 rounded-2xl p-6 inline-block"
+                  className="inline-block"
                 >
-                  <motion.span
-                    animate={{ y: [0, 5, 0] }}
-                    transition={{ duration: 1, repeat: 2 }}
-                    className="text-5xl block mb-2"
-                  >
-                    😔
-                  </motion.span>
-                  <p className="text-3xl font-bold text-magenta-400 drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]">
-                    You Lose
-                  </p>
+                  <pre className="text-magenta-400 font-mono text-sm">
+{`
+  ╔═══════════════════╗
+  ║   ROUND  LOST     ║
+  ╚═══════════════════╝
+`}
+                  </pre>
                 </motion.div>
               )}
             </motion.div>
@@ -362,34 +485,20 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
           <HandSelection onSelect={handleMoveSelect} />
         )}
 
-        {/* Play Again Button - Show after result */}
-        {showResult && roundResult && (
+        {/* Next Round - auto continues */}
+        {showResult && roundResult && !gameWinner && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-center mt-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center mt-4"
           >
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(0, 255, 255, 0.5)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setMyMove(null);
-                setRevealedMyMove(null);
-                setRevealedOpponentMove(null);
-                setRoundResult(null);
-                setShowResult(false);
-                onPlayAgain();
-              }}
-              className="bg-gradient-to-r from-cyan-500 via-purple-500 to-magenta-500 text-white font-bold py-4 px-10 rounded-xl shadow-lg shadow-cyan-500/30 transition-all relative overflow-hidden group"
+            <motion.p
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="text-gray-500 font-mono text-sm"
             >
-              <motion.span
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                animate={{ x: ['-100%', '100%'] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              />
-              <span className="relative text-lg">🔄 Next Round</span>
-            </motion.button>
+              {'> NEXT ROUND STARTING... <'}
+            </motion.p>
           </motion.div>
         )}
       </div>

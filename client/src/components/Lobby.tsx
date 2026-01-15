@@ -5,6 +5,7 @@ import { AsciiDisplay } from './AsciiArt';
 import { Leaderboard } from './Leaderboard';
 import { Spectate } from './Spectate';
 import { TournamentBracket } from './TournamentBracket';
+import sounds from '../utils/sounds';
 
 interface LobbyProps {
   onJoinQueue: () => void;
@@ -16,6 +17,16 @@ export const Lobby = ({ onJoinQueue, isSearching, playerName }: LobbyProps) => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showSpectate, setShowSpectate] = useState(false);
   const [showTournaments, setShowTournaments] = useState(false);
+
+  const handleJoinQueue = () => {
+    sounds.click();
+    onJoinQueue();
+  };
+
+  const handleOpenModal = (setter: (v: boolean) => void) => {
+    sounds.click();
+    setter(true);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -95,7 +106,7 @@ export const Lobby = ({ onJoinQueue, isSearching, playerName }: LobbyProps) => {
           <motion.button
             whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(0, 255, 255, 0.8)' }}
             whileTap={{ scale: 0.98 }}
-            onClick={onJoinQueue}
+            onClick={handleJoinQueue}
             className="w-full bg-black border-2 border-cyan-500 text-cyan-400 font-mono font-bold py-4 px-8 text-lg transition-all hover:bg-cyan-500/10 mb-4"
           >
             {'>'} START MATCH {'<'}
@@ -107,26 +118,26 @@ export const Lobby = ({ onJoinQueue, isSearching, playerName }: LobbyProps) => {
           <motion.button
             whileHover={{ scale: 1.05, borderColor: '#22d3ee' }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowLeaderboard(true)}
+            onClick={() => handleOpenModal(setShowLeaderboard)}
             className="bg-black/50 border border-gray-700 hover:border-cyan-500 text-gray-400 hover:text-cyan-400 font-mono py-3 px-2 text-sm transition-all"
           >
-            🏆 RANKS
+            [L] RANKS
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05, borderColor: '#a855f7' }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowSpectate(true)}
+            onClick={() => handleOpenModal(setShowSpectate)}
             className="bg-black/50 border border-gray-700 hover:border-purple-500 text-gray-400 hover:text-purple-400 font-mono py-3 px-2 text-sm transition-all"
           >
-            👁️ WATCH
+            [W] WATCH
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05, borderColor: '#ec4899' }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowTournaments(true)}
+            onClick={() => handleOpenModal(setShowTournaments)}
             className="bg-black/50 border border-gray-700 hover:border-magenta-500 text-gray-400 hover:text-magenta-400 font-mono py-3 px-2 text-sm transition-all"
           >
-            🏟️ TOURNEY
+            [T] TOURNEY
           </motion.button>
         </div>
 

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { AsciiDisplay } from './AsciiArt';
+import sounds from '../utils/sounds';
 
 interface HandSelectionProps {
   onSelect: (move: 'rock' | 'paper' | 'scissors') => void;
@@ -12,6 +13,11 @@ const hands = [
 ];
 
 export const HandSelection = ({ onSelect }: HandSelectionProps) => {
+  const handleSelect = (move: 'rock' | 'paper' | 'scissors') => {
+    sounds.click();
+    onSelect(move);
+  };
+
   return (
     <motion.div
       initial={{ y: 50, opacity: 0 }}
@@ -36,7 +42,7 @@ export const HandSelection = ({ onSelect }: HandSelectionProps) => {
               boxShadow: '0 0 40px rgba(0, 255, 255, 0.6)'
             }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect(hand.move)}
+            onClick={() => handleSelect(hand.move)}
             className="bg-black border-2 border-gray-700 hover:border-cyan-500 p-4 transition-all cursor-pointer group"
           >
             <div className="mb-2">

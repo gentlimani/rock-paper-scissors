@@ -9,7 +9,7 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "cd client && npm install && npm run build",
     "build:server": "cd server && npm install && npm run build",
-    "start": "cd server && NODE_ENV=production node dist/index.js"
+    "start": "cd server && NODE_ENV=production node dist/server/index.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -31,7 +31,7 @@ function App() {
     return <Welcome onSubmit={setPlayerName} />;
   }
 
-  if (gameState && opponentId) {
+  if (gameState && opponentId && socket.id) {
     return (
       <GameScreen
         gameState={gameState}

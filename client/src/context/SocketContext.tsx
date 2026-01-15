@@ -78,8 +78,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         return {
           roomId: data.roomId,
           players: [
-            { id: socketInstance.id!, score: 0 },
-            { id: data.opponentId, score: 0 },
+            { id: socketInstance.id!, name: '', score: 0 },
+            { id: data.opponentId, name: data.opponentName, score: 0 },
           ],
           status: 'waiting' as const,
           moves: {},

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useSocket } from '../context/SocketContext';
 import type { LiveMatch, GameState } from '@shared/types';
-import { AsciiDisplay } from './AsciiArt';
 
 interface SpectateProps {
   onClose: () => void;

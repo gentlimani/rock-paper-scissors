@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSocket } from '../context/SocketContext';
 import { HandSelection } from './HandSelection';
 import { RetroBackground } from './RetroBackground';
-import { AsciiDisplay, GlitchAscii } from './AsciiArt';
+import { AsciiDisplay } from './AsciiArt';
 import type { GameState } from '@shared/types';
 
 interface GameScreenProps {

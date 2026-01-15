@@ -5,7 +5,7 @@ import { GameScreen } from './components/GameScreen';
 import { RetroBackground } from './components/RetroBackground';
 
 function App() {
-  const { socket, isConnected, gameState, opponentId, isSearching, playerName, setPlayerName, joinQueue, playAgain, quitGame } = useSocket();
+  const { socket, isConnected, gameState, opponentId, isSearching, playerName, setPlayerName, joinQueue, playAgain, backToLobby } = useSocket();
 
   if (!isConnected || !socket) {
     return (
@@ -39,7 +39,7 @@ function App() {
         opponentId={opponentId}
         playerName={playerName}
         onPlayAgain={playAgain}
-        onQuit={quitGame}
+        onBackToLobby={backToLobby}
       />
     );
   }

@@ -13,14 +13,14 @@ interface GameScreenProps {
   opponentId: string;
   playerName: string;
   onPlayAgain: () => void;
-  onQuit: () => void;
+  onBackToLobby: () => void;
 }
 
 type Move = 'rock' | 'paper' | 'scissors' | null;
 
 const WINNING_SCORE = 2; // First to 2 wins
 
-export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgain, onQuit }: GameScreenProps) => {
+export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgain, onBackToLobby }: GameScreenProps) => {
   const { socket } = useSocket();
   const [myMove, setMyMove] = useState<Move>(null);
   const [revealedMyMove, setRevealedMyMove] = useState<Move>(null);
@@ -250,12 +250,12 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
                 [R] REMATCH
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}
+                whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(156, 163, 175, 0.5)' }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => { sounds.click(); onQuit(); }}
-                className="bg-black border-2 border-red-500/50 hover:border-red-500 text-red-400 font-mono py-3 px-8 transition-all"
+                onClick={() => { sounds.click(); onBackToLobby(); }}
+                className="bg-black border-2 border-gray-500/50 hover:border-gray-500 text-gray-400 font-mono py-3 px-8 transition-all"
               >
-                [Q] QUIT
+                [B] BACK
               </motion.button>
             </div>
           </motion.div>
@@ -295,12 +295,12 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
               {musicEnabled ? '♪ ON' : '♪ OFF'}
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}
+              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(156, 163, 175, 0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => { sounds.click(); onQuit(); }}
-              className="bg-black border-2 border-red-500/50 hover:border-red-500 text-red-400 font-mono py-2 px-4 transition-all"
+              onClick={() => { sounds.click(); onBackToLobby(); }}
+              className="bg-black border-2 border-gray-500/50 hover:border-gray-500 text-gray-400 font-mono py-2 px-4 transition-all"
             >
-              [X] QUIT
+              [B] BACK
             </motion.button>
           </div>
         </motion.div>

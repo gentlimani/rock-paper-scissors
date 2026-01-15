@@ -14,6 +14,7 @@ interface SocketContextType {
   joinQueue: () => void;
   playAgain: () => void;
   quitGame: () => void;
+  backToLobby: () => void;
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -27,6 +28,7 @@ const SocketContext = createContext<SocketContextType>({
   joinQueue: () => {},
   playAgain: () => {},
   quitGame: () => {},
+  backToLobby: () => {},
 });
 
 export const useSocket = () => useContext(SocketContext);
@@ -66,41 +68,22 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       sounds.matchFound();
       setIsSearching(false);
       setOpponentId(data.opponentId);
-      // Initialize game state only if new game (preserve scores for play again)
-      setGameState((prev: GameState | null) => {
-        // If same room, keep existing scores
-        if (prev && prev.roomId === data.roomId) {
-          return {
-            ...prev,
-            status: 'waiting' as const,
-            moves: {},
-          };
-        }
-        // New game, start fresh
-        return {
-          roomId: data.roomId,
-          players: [
-            { id: socketInstance.id!, name: '', score: 0 },
-            { id: data.opponentId, name: data.opponentName, score: 0 },
-          ],
-          status: 'waiting' as const,
-          moves: {},
-        };
+      // Always start fresh - server sends game_start with correct state
+      setGameState({
+        roomId: data.roomId,
+        players: [
+          { id: socketInstance.id!, name: '', score: 0 },
+          { id: data.opponentId, name: data.opponentName, score: 0 },
+        ],
+        status: 'waiting' as const,
+        moves: {},
       });
     });
 
     socketInstance.on('game_start', (data) => {
       console.log('Game started:', data);
-      // Preserve client-side scores if they exist
-      setGameState((prev: GameState | null) => {
-        if (prev && prev.roomId === data.roomId) {
-          return {
-            ...data,
-            players: prev.players, // Keep client scores
-          };
-        }
-        return data;
-      });
+      // Always use server's game state (server handles score resets)
+      setGameState(data);
     });
 
     socketInstance.on('round_result', (data) => {
@@ -157,6 +140,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     }
   };
 
+  const backToLobby = () => {
+    if (socket) {
+      socket.emit('quit_game');
+      setGameState(null);
+      setOpponentId(null);
+      // Keep playerName so user can play again without re-entering
+    }
+  };
+
   return (
     <SocketContext.Provider
       value={{
@@ -170,6 +162,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         joinQueue,
         playAgain,
         quitGame,
+        backToLobby,
       }}
     >
       {children}

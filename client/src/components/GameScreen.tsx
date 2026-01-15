@@ -261,7 +261,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="bg-black/80 border-2 border-cyan-500/50 p-6 mb-6"
+          className="bg-gray-900/90 border-2 border-cyan-500/50 p-6 mb-6"
           style={{ boxShadow: '0 0 30px rgba(0,255,255,0.2), inset 0 0 20px rgba(0,255,255,0.05)' }}
         >
           <div className="flex justify-between items-center">
@@ -270,11 +270,11 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
               animate={myPlayer?.score ? { scale: [1, 1.1, 1] } : {}}
               transition={{ duration: 0.3 }}
             >
-              <p className="text-cyan-400 text-sm mb-1 font-mono">{playerName}</p>
+              <p className="text-cyan-300 text-sm mb-1 font-mono font-bold">{playerName}</p>
               <p className="text-5xl font-bold text-cyan-400 font-mono drop-shadow-[0_0_20px_rgba(0,255,255,0.8)]">
                 {myPlayer?.score || 0}
               </p>
-              <p className="text-cyan-600 text-xs font-mono mt-1">FIRST TO {WINNING_SCORE}</p>
+              <p className="text-cyan-500 text-xs font-mono mt-1">FIRST TO {WINNING_SCORE}</p>
             </motion.div>
             <div className="flex flex-col items-center">
               <AsciiDisplay type="vs" color="text-yellow-400" size="sm" />
@@ -284,13 +284,13 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
               animate={opponentPlayer?.score ? { scale: [1, 1.1, 1] } : {}}
               transition={{ duration: 0.3 }}
             >
-              <p className="text-magenta-400 text-sm mb-1 font-mono">
+              <p className="text-pink-300 text-sm mb-1 font-mono font-bold">
                 {opponentId?.startsWith('bot_') ? 'CPU' : opponentPlayer?.name || 'OPPONENT'}
               </p>
-              <p className="text-5xl font-bold text-magenta-400 font-mono drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]">
+              <p className="text-5xl font-bold text-pink-400 font-mono drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]">
                 {opponentPlayer?.score || 0}
               </p>
-              <p className="text-magenta-600 text-xs font-mono mt-1">FIRST TO {WINNING_SCORE}</p>
+              <p className="text-pink-500 text-xs font-mono mt-1">FIRST TO {WINNING_SCORE}</p>
             </motion.div>
           </div>
         </motion.div>
@@ -325,10 +325,10 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
           <motion.div
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="bg-black/80 border-2 border-cyan-500/30 p-6 text-center relative overflow-hidden"
-            style={{ boxShadow: '0 0 20px rgba(0,255,255,0.1)' }}
+            className="bg-gray-900/90 border-2 border-cyan-500/30 p-6 text-center relative overflow-hidden"
+            style={{ boxShadow: '0 0 20px rgba(0,255,255,0.2)' }}
           >
-            <h3 className="text-lg font-semibold text-cyan-400 mb-4 font-mono">[{playerName}]</h3>
+            <h3 className="text-lg font-bold text-cyan-400 mb-4 font-mono">[{playerName}]</h3>
             <div className="min-h-[120px] flex items-center justify-center">
               <AnimatePresence mode="wait">
                 {showResult && revealedMyMove ? (
@@ -350,7 +350,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
                     <motion.pre
                       animate={{ opacity: [0.5, 1, 0.5] }}
                       transition={{ duration: 0.5, repeat: Infinity }}
-                      className="text-cyan-400 font-mono text-xs"
+                      className="text-green-400 font-mono text-xs"
                     >
 {`
   ╔══════════════╗
@@ -363,9 +363,9 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
                   <motion.pre
                     key="waiting"
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    animate={{ opacity: [0.4, 0.8, 0.4] }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="text-gray-600 font-mono text-lg"
+                    className="text-gray-400 font-mono text-lg"
                   >
                     {'[ ? ]'}
                   </motion.pre>
@@ -378,11 +378,11 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
           <motion.div
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="bg-black/80 border-2 border-magenta-500/30 p-6 text-center relative overflow-hidden"
-            style={{ boxShadow: '0 0 20px rgba(236,72,153,0.1)' }}
+            className="bg-gray-900/90 border-2 border-pink-500/30 p-6 text-center relative overflow-hidden"
+            style={{ boxShadow: '0 0 20px rgba(236,72,153,0.2)' }}
           >
-            <h3 className="text-lg font-semibold text-magenta-400 mb-4 font-mono">
-              [{opponentId?.startsWith('bot_') ? 'CPU' : 'OPPONENT'}]
+            <h3 className="text-lg font-bold text-pink-400 mb-4 font-mono">
+              [{opponentId?.startsWith('bot_') ? 'CPU' : opponentPlayer?.name || 'OPPONENT'}]
             </h3>
             <div className="min-h-[120px] flex items-center justify-center">
               <AnimatePresence mode="wait">
@@ -393,7 +393,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
                     animate={{ scale: 1, rotate: 0 }}
                     exit={{ scale: 0, rotate: -180 }}
                   >
-                    <AsciiDisplay type={revealedOpponentMove} color="text-magenta-400" size="md" />
+                    <AsciiDisplay type={revealedOpponentMove} color="text-pink-400" size="md" />
                   </motion.div>
                 ) : waitingForOpponent ? (
                   <motion.div
@@ -405,7 +405,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
                     <motion.pre
                       animate={{ opacity: [0.5, 1, 0.5] }}
                       transition={{ duration: 1, repeat: Infinity }}
-                      className="text-magenta-400 font-mono text-xs"
+                      className="text-pink-400 font-mono text-xs"
                     >
 {`
   ╔══════════════╗
@@ -418,9 +418,9 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
                   <motion.pre
                     key="hidden"
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    animate={{ opacity: [0.4, 0.8, 0.4] }}
                     transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                    className="text-gray-600 font-mono text-lg"
+                    className="text-gray-400 font-mono text-lg"
                   >
                     {'[ ? ]'}
                   </motion.pre>
@@ -467,7 +467,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
                   animate={{ y: 0 }}
                   className="inline-block"
                 >
-                  <pre className="text-magenta-400 font-mono text-sm">
+                  <pre className="text-red-400 font-mono text-sm">
 {`
   ╔═══════════════════╗
   ║   ROUND  LOST     ║

@@ -22,7 +22,7 @@ export const AnimatedBackground = () => {
           y: [0, 80, 0],
         }}
         transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -bottom-40 -right-40 w-96 h-96 bg-magenta-500/20 rounded-full blur-3xl"
+        className="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"
       />
       <motion.div
         animate={{

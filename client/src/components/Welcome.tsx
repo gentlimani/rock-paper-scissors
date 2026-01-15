@@ -81,8 +81,8 @@ export const Welcome = ({ onSubmit }: WelcomeProps) => {
         
         {/* Retro corner decorations */}
         <div className="absolute top-2 left-2 w-2 h-2 bg-cyan-500 animate-pulse" />
-        <div className="absolute top-2 right-2 w-2 h-2 bg-magenta-500 animate-pulse" />
-        <div className="absolute bottom-2 left-2 w-2 h-2 bg-magenta-500 animate-pulse" />
+        <div className="absolute top-2 right-2 w-2 h-2 bg-pink-500 animate-pulse" />
+        <div className="absolute bottom-2 left-2 w-2 h-2 bg-pink-500 animate-pulse" />
         <div className="absolute bottom-2 right-2 w-2 h-2 bg-cyan-500 animate-pulse" />
       </motion.div>
     </div>

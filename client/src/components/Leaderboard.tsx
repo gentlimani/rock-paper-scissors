@@ -60,7 +60,7 @@ export const Leaderboard = ({ onClose }: LeaderboardProps) => {
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
             🏆 Leaderboard
           </h2>
           <motion.button

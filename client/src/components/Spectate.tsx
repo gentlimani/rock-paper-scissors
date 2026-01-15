@@ -126,8 +126,8 @@ export const Spectate = ({ onClose }: SpectateProps) => {
             </div>
 
             {/* Player 2 */}
-            <div className="bg-gray-800/50 border border-magenta-500/30 rounded-xl p-6 text-center">
-              <h3 className="text-xl font-bold text-magenta-400 mb-2">
+            <div className="bg-gray-800/50 border border-pink-500/30 rounded-xl p-6 text-center">
+              <h3 className="text-xl font-bold text-pink-400 mb-2">
                 {watching.players[1]?.name || 'Player 2'}
               </h3>
               <p className="text-4xl font-bold text-white mb-4">
@@ -174,7 +174,7 @@ export const Spectate = ({ onClose }: SpectateProps) => {
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
             👁️ Live Matches
           </h2>
           <motion.button
@@ -228,7 +228,7 @@ export const Spectate = ({ onClose }: SpectateProps) => {
                         <p className="text-white font-medium">
                           <span className="text-cyan-400">{match.player1.name}</span>
                           {' vs '}
-                          <span className="text-magenta-400">{match.player2.name}</span>
+                          <span className="text-pink-400">{match.player2.name}</span>
                         </p>
                         <p className="text-gray-500 text-sm">
                           Score: {match.player1.score} - {match.player2.score}

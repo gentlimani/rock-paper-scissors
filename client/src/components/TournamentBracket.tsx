@@ -228,7 +228,7 @@ export const TournamentBracket = ({ onClose, playerName }: TournamentBracketProp
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => joinTournament(selectedTournament.id)}
-                  className="bg-gradient-to-r from-cyan-500 to-magenta-500 text-white font-bold py-3 px-8 rounded-xl"
+                  className="bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-bold py-3 px-8 rounded-xl"
                 >
                   Join Tournament
                 </motion.button>
@@ -268,7 +268,7 @@ export const TournamentBracket = ({ onClose, playerName }: TournamentBracketProp
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-400 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
             🏟️ Tournaments
           </h2>
           <div className="flex gap-2">

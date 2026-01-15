@@ -77,7 +77,7 @@ export const Lobby = ({ onJoinQueue, isSearching, playerName }: LobbyProps) => {
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
           >
-            <AsciiDisplay type="scissors" color="text-magenta-400" size="sm" />
+            <AsciiDisplay type="scissors" color="text-pink-400" size="sm" />
           </motion.div>
         </div>
 
@@ -135,7 +135,7 @@ export const Lobby = ({ onJoinQueue, isSearching, playerName }: LobbyProps) => {
             whileHover={{ scale: 1.05, borderColor: '#ec4899' }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handleOpenModal(setShowTournaments)}
-            className="bg-black/50 border border-gray-700 hover:border-magenta-500 text-gray-400 hover:text-magenta-400 font-mono py-3 px-2 text-sm transition-all"
+            className="bg-black/50 border border-gray-700 hover:border-pink-500 text-gray-400 hover:text-pink-400 font-mono py-3 px-2 text-sm transition-all"
           >
             [T] TOURNEY
           </motion.button>
@@ -143,8 +143,8 @@ export const Lobby = ({ onJoinQueue, isSearching, playerName }: LobbyProps) => {
 
         {/* Retro Decorations */}
         <div className="absolute top-2 left-2 w-2 h-2 bg-cyan-500 animate-pulse" />
-        <div className="absolute top-2 right-2 w-2 h-2 bg-magenta-500 animate-pulse" />
-        <div className="absolute bottom-2 left-2 w-2 h-2 bg-magenta-500 animate-pulse" />
+        <div className="absolute top-2 right-2 w-2 h-2 bg-pink-500 animate-pulse" />
+        <div className="absolute bottom-2 left-2 w-2 h-2 bg-pink-500 animate-pulse" />
         <div className="absolute bottom-2 right-2 w-2 h-2 bg-cyan-500 animate-pulse" />
       </motion.div>
 

@@ -75,7 +75,7 @@ export const joinTournament = (tournamentId: string, playerId: string, playerNam
   const tournament = tournaments.get(tournamentId);
   if (!tournament || tournament.status !== 'waiting') return null;
   if (tournament.players.length >= tournament.maxPlayers) return null;
-  if (tournament.players.some(p => p.id === playerId)) return null;
+  if (tournament.players.some((p: TournamentPlayer) => p.id === playerId)) return null;
   
   tournament.players.push({
     id: playerId,
@@ -96,10 +96,10 @@ export const leaveTournament = (tournamentId: string, playerId: string): Tournam
   const tournament = tournaments.get(tournamentId);
   if (!tournament || tournament.status !== 'waiting') return null;
   
-  tournament.players = tournament.players.filter(p => p.id !== playerId);
+  tournament.players = tournament.players.filter((p: TournamentPlayer) => p.id !== playerId);
   
   // Re-assign seeds
-  tournament.players.forEach((p, i) => {
+  tournament.players.forEach((p: TournamentPlayer, i: number) => {
     p.seed = i + 1;
   });
   
@@ -114,7 +114,7 @@ export const startTournament = (tournamentId: string): Tournament | null => {
   
   // Shuffle players for seeding
   const shuffled = [...tournament.players].sort(() => Math.random() - 0.5);
-  shuffled.forEach((p, i) => {
+  shuffled.forEach((p: TournamentPlayer, i: number) => {
     p.seed = i + 1;
   });
   
@@ -130,7 +130,7 @@ export const recordMatchResult = (tournamentId: string, matchId: string, winnerI
   const tournament = tournaments.get(tournamentId);
   if (!tournament) return null;
   
-  const match = tournament.matches.find(m => m.id === matchId);
+  const match = tournament.matches.find((m: TournamentMatch) => m.id === matchId);
   if (!match || match.status === 'completed') return null;
   
   const winner = match.player1?.id === winnerId ? match.player1 : match.player2;
@@ -140,7 +140,7 @@ export const recordMatchResult = (tournamentId: string, matchId: string, winnerI
   match.status = 'completed';
   
   // Advance winner to next round
-  const nextRoundMatches = tournament.matches.filter(m => m.round === match.round + 1);
+  const nextRoundMatches = tournament.matches.filter((m: TournamentMatch) => m.round === match.round + 1);
   if (nextRoundMatches.length > 0) {
     const nextMatchIndex = Math.floor(match.position / 2);
     const nextMatch = nextRoundMatches[nextMatchIndex];
@@ -163,8 +163,8 @@ export const recordMatchResult = (tournamentId: string, matchId: string, winnerI
   }
   
   // Check if current round is complete
-  const currentRoundMatches = tournament.matches.filter(m => m.round === tournament.currentRound);
-  if (currentRoundMatches.every(m => m.status === 'completed')) {
+  const currentRoundMatches = tournament.matches.filter((m: TournamentMatch) => m.round === tournament.currentRound);
+  if (currentRoundMatches.every((m: TournamentMatch) => m.status === 'completed')) {
     tournament.currentRound += 1;
   }
   
@@ -186,7 +186,7 @@ export const getPlayerPendingMatch = (tournamentId: string, playerId: string): T
   const tournament = tournaments.get(tournamentId);
   if (!tournament) return null;
   
-  return tournament.matches.find(m => 
+  return tournament.matches.find((m: TournamentMatch) => 
     m.status === 'pending' &&
     (m.player1?.id === playerId || m.player2?.id === playerId)
   ) || null;
@@ -194,7 +194,6 @@ export const getPlayerPendingMatch = (tournamentId: string, playerId: string): T
 
 // Delete old completed tournaments (cleanup)
 export const cleanupTournaments = (): void => {
-  const oneHourAgo = Date.now() - 60 * 60 * 1000;
   // In a real app, you'd track creation time
   // For now, just remove completed tournaments if there are too many
   if (tournaments.size > 50) {

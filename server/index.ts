@@ -103,7 +103,7 @@ const calculateWinner = (
 const getLiveMatches = (): LiveMatch[] => {
   const matches: LiveMatch[] = [];
   
-  gameStore.forEach((gameState, roomId) => {
+  gameStore.forEach((gameState: GameState, roomId: string) => {
     // Only show human vs human matches (not bot matches)
     if (!botPlayers.has(roomId) && gameState.players.length === 2) {
       matches.push({
@@ -127,12 +127,12 @@ io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   // Handle join queue
-  socket.on('join_queue', (data) => {
+  socket.on('join_queue', (data: { playerName: string } | undefined) => {
     const playerName = data?.playerName || playerNames.get(socket.id) || 'Anonymous';
     playerNames.set(socket.id, playerName);
     getOrCreatePlayer(playerName); // Register in leaderboard
     
-    if (matchmakingQueue.some(p => p.id === socket.id)) {
+    if (matchmakingQueue.some((p: { id: string; name: string }) => p.id === socket.id)) {
       return; // Already in queue
     }
 
@@ -176,7 +176,7 @@ io.on('connection', (socket) => {
     } else {
       // If no match found, wait 3 seconds then match with bot
       setTimeout(() => {
-        const queueIndex = matchmakingQueue.findIndex(p => p.id === socket.id);
+        const queueIndex = matchmakingQueue.findIndex((p: { id: string; name: string }) => p.id === socket.id);
         if (queueIndex !== -1) {
           // Still in queue, match with bot
           const player = matchmakingQueue.splice(queueIndex, 1)[0];
@@ -187,17 +187,17 @@ io.on('connection', (socket) => {
   });
 
   // Handle player name update
-  socket.on('update_player_name', ({ name }) => {
+  socket.on('update_player_name', ({ name }: { name: string }) => {
     playerNames.set(socket.id, name);
     getOrCreatePlayer(name);
   });
 
   // Handle submit move
-  socket.on('submit_move', ({ move }) => {
+  socket.on('submit_move', ({ move }: { move: 'rock' | 'paper' | 'scissors' }) => {
     // Find the room this player is in
     let playerRoom: string | null = null;
     for (const [roomId, gameState] of gameStore.entries()) {
-      if (gameState.players.some(p => p.id === socket.id)) {
+      if (gameState.players.some((p: Player) => p.id === socket.id)) {
         playerRoom = roomId;
         break;
       }
@@ -220,14 +220,14 @@ io.on('connection', (socket) => {
 
     // Notify spectators of update
     if (gameState.spectators && gameState.spectators.length > 0) {
-      gameState.spectators.forEach(spectatorId => {
+      gameState.spectators.forEach((spectatorId: string) => {
         io.to(spectatorId).emit('spectate_update', { ...gameState, moves: {} }); // Don't reveal moves
       });
     }
 
     // Check if opponent is a bot
     const botId = botPlayers.get(playerRoom);
-    const opponent = gameState.players.find(p => p.id !== socket.id);
+    const opponent = gameState.players.find((p: Player) => p.id !== socket.id);
     
     if (botId && opponent && opponent.id === botId && !gameState.moves[botId]) {
       // Bot's turn - make a random move after a short delay
@@ -291,7 +291,7 @@ io.on('connection', (socket) => {
 
       // Notify spectators with full result
       if (gameState.spectators && gameState.spectators.length > 0) {
-        gameState.spectators.forEach(spectatorId => {
+        gameState.spectators.forEach((spectatorId: string) => {
           io.to(spectatorId).emit('spectate_update', gameState);
           io.to(spectatorId).emit('round_result', {
             winnerId,
@@ -304,7 +304,7 @@ io.on('connection', (socket) => {
       gameState.moves = {};
       gameState.status = 'waiting';
 
-      console.log(`Round result in ${roomId}: ${winnerId ? (gameState.players.find(p => p.id === winnerId)?.name || 'Unknown') : 'Tie'}`);
+      console.log(`Round result in ${roomId}: ${winnerId ? (gameState.players.find((p: Player) => p.id === winnerId)?.name || 'Unknown') : 'Tie'}`);
       
       // Broadcast updated live matches
       broadcastLiveMatches();
@@ -315,7 +315,7 @@ io.on('connection', (socket) => {
   socket.on('play_again', () => {
     let playerRoom: string | null = null;
     for (const [roomId, gameState] of gameStore.entries()) {
-      if (gameState.players.some(p => p.id === socket.id)) {
+      if (gameState.players.some((p: Player) => p.id === socket.id)) {
         playerRoom = roomId;
         break;
       }
@@ -329,7 +329,7 @@ io.on('connection', (socket) => {
     gameState.moves = {};
     gameState.status = 'waiting';
 
-    const opponent = gameState.players.find(p => p.id !== socket.id);
+    const opponent = gameState.players.find((p: Player) => p.id !== socket.id);
     if (opponent) {
       io.to(socket.id).emit('match_found', {
         roomId: playerRoom,
@@ -354,15 +354,15 @@ io.on('connection', (socket) => {
     console.log('User quit game:', socket.id);
 
     for (const [roomId, gameState] of gameStore.entries()) {
-      if (gameState.players.some(p => p.id === socket.id)) {
-        const opponent = gameState.players.find(p => p.id !== socket.id);
+      if (gameState.players.some((p: Player) => p.id === socket.id)) {
+        const opponent = gameState.players.find((p: Player) => p.id !== socket.id);
         if (opponent && !opponent.id.startsWith('bot_')) {
           io.to(opponent.id).emit('opponent_left');
         }
 
         // Notify spectators
         if (gameState.spectators) {
-          gameState.spectators.forEach(spectatorId => {
+          gameState.spectators.forEach((spectatorId: string) => {
             io.to(spectatorId).emit('opponent_left');
             spectators.delete(spectatorId);
           });
@@ -385,7 +385,7 @@ io.on('connection', (socket) => {
     socket.emit('live_matches', getLiveMatches());
   });
 
-  socket.on('spectate_match', ({ roomId }) => {
+  socket.on('spectate_match', ({ roomId }: { roomId: string }) => {
     const gameState = gameStore.get(roomId);
     if (!gameState) return;
 
@@ -394,7 +394,7 @@ io.on('connection', (socket) => {
     if (previousRoom) {
       const prevGame = gameStore.get(previousRoom);
       if (prevGame && prevGame.spectators) {
-        prevGame.spectators = prevGame.spectators.filter(id => id !== socket.id);
+        prevGame.spectators = prevGame.spectators.filter((id: string) => id !== socket.id);
       }
       socket.leave(`spectate_${previousRoom}`);
     }
@@ -420,7 +420,7 @@ io.on('connection', (socket) => {
 
     const gameState = gameStore.get(roomId);
     if (gameState && gameState.spectators) {
-      gameState.spectators = gameState.spectators.filter(id => id !== socket.id);
+      gameState.spectators = gameState.spectators.filter((id: string) => id !== socket.id);
       io.to(roomId).emit('spectator_joined', { count: gameState.spectators.length });
     }
 
@@ -440,13 +440,13 @@ io.on('connection', (socket) => {
     socket.emit('tournaments_list', getTournaments());
   });
 
-  socket.on('create_tournament', ({ name, maxPlayers }) => {
-    const tournament = createTournament(name, maxPlayers);
+  socket.on('create_tournament', ({ name, maxPlayers }: { name: string; maxPlayers: number }) => {
+    createTournament(name, maxPlayers);
     io.emit('tournaments_list', getTournaments());
     console.log(`Tournament created: ${name}`);
   });
 
-  socket.on('join_tournament', ({ tournamentId }) => {
+  socket.on('join_tournament', ({ tournamentId }: { tournamentId: string }) => {
     const playerName = playerNames.get(socket.id) || 'Anonymous';
     const tournament = joinTournament(tournamentId, socket.id, playerName);
     
@@ -471,7 +471,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('leave_tournament', ({ tournamentId }) => {
+  socket.on('leave_tournament', ({ tournamentId }: { tournamentId: string }) => {
     const tournament = leaveTournament(tournamentId, socket.id);
     if (tournament) {
       io.emit('tournaments_list', getTournaments());
@@ -484,7 +484,7 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
 
     // Remove from queue
-    const queueIndex = matchmakingQueue.findIndex(p => p.id === socket.id);
+    const queueIndex = matchmakingQueue.findIndex((p: { id: string; name: string }) => p.id === socket.id);
     if (queueIndex !== -1) {
       matchmakingQueue.splice(queueIndex, 1);
     }
@@ -494,22 +494,22 @@ io.on('connection', (socket) => {
     if (spectatingRoom) {
       const gameState = gameStore.get(spectatingRoom);
       if (gameState && gameState.spectators) {
-        gameState.spectators = gameState.spectators.filter(id => id !== socket.id);
+        gameState.spectators = gameState.spectators.filter((id: string) => id !== socket.id);
       }
       spectators.delete(socket.id);
     }
 
     // Clean up game room
     for (const [roomId, gameState] of gameStore.entries()) {
-      if (gameState.players.some(p => p.id === socket.id)) {
-        const opponent = gameState.players.find(p => p.id !== socket.id);
+      if (gameState.players.some((p: Player) => p.id === socket.id)) {
+        const opponent = gameState.players.find((p: Player) => p.id !== socket.id);
         if (opponent && !opponent.id.startsWith('bot_')) {
           io.to(opponent.id).emit('opponent_left');
         }
 
         // Notify spectators
         if (gameState.spectators) {
-          gameState.spectators.forEach(spectatorId => {
+          gameState.spectators.forEach((spectatorId: string) => {
             io.to(spectatorId).emit('opponent_left');
             spectators.delete(spectatorId);
           });

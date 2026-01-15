@@ -105,6 +105,7 @@ export const Leaderboard = ({ onClose }: LeaderboardProps) => {
                 <tr>
                   <th className="py-3 px-2 text-left">Rank</th>
                   <th className="py-3 px-2 text-left">Player</th>
+                  <th className="py-3 px-2 text-center">Score</th>
                   <th className="py-3 px-2 text-center">W</th>
                   <th className="py-3 px-2 text-center">L</th>
                   <th className="py-3 px-2 text-center">T</th>
@@ -126,6 +127,9 @@ export const Leaderboard = ({ onClose }: LeaderboardProps) => {
                       </td>
                       <td className="py-3 px-2 text-white font-medium">
                         {entry.name}
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        <span className="text-cyan-400 font-bold font-mono">{entry.score || 0}</span>
                       </td>
                       <td className="py-3 px-2 text-center text-green-400">{entry.wins}</td>
                       <td className="py-3 px-2 text-center text-red-400">{entry.losses}</td>

@@ -21,6 +21,7 @@ export interface LeaderboardEntry {
   wins: number;
   losses: number;
   ties: number;
+  score: number; // Win = 2 points, Tie = 1 point, Loss = 0
   winRate: number;
   rank: number;
 }

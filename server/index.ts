@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import type { ServerToClientEvents, ClientToServerEvents, GameState, Player, LiveMatch } from '../shared/types.js';
 import { gameStore } from './store.js';
-import { getLeaderboard, recordWin, recordLoss, recordTie, getOrCreatePlayer } from './leaderboard.js';
+import { getLeaderboard, recordWin, recordLoss, recordTie, getOrCreatePlayer, initDatabase } from './leaderboard.js';
 import { createTournament, joinTournament, leaveTournament, getTournaments, getTournament, recordMatchResult, getPlayerPendingMatch } from './tournament.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -127,10 +127,10 @@ io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   // Handle join queue
-  socket.on('join_queue', (data: { playerName: string } | undefined) => {
+  socket.on('join_queue', async (data: { playerName: string } | undefined) => {
     const playerName = data?.playerName || playerNames.get(socket.id) || 'Anonymous';
     playerNames.set(socket.id, playerName);
-    getOrCreatePlayer(playerName); // Register in leaderboard
+    await getOrCreatePlayer(playerName); // Register in leaderboard
     
     if (matchmakingQueue.some((p: { id: string; name: string }) => p.id === socket.id)) {
       return; // Already in queue
@@ -187,9 +187,9 @@ io.on('connection', (socket) => {
   });
 
   // Handle player name update
-  socket.on('update_player_name', ({ name }: { name: string }) => {
+  socket.on('update_player_name', async ({ name }: { name: string }) => {
     playerNames.set(socket.id, name);
-    getOrCreatePlayer(name);
+    await getOrCreatePlayer(name);
   });
 
   // Handle submit move
@@ -251,7 +251,7 @@ io.on('connection', (socket) => {
   });
 
   // Helper function to process round results
-  const processRoundResult = (roomId: string, gameState: GameState) => {
+  const processRoundResult = async (roomId: string, gameState: GameState) => {
     const [player1, player2] = gameState.players;
     const move1 = gameState.moves[player1.id];
     const move2 = gameState.moves[player2.id];
@@ -265,21 +265,21 @@ io.on('connection', (socket) => {
         player1.score += 1;
         // Record stats (only for non-bot games)
         if (!botPlayers.has(roomId)) {
-          recordWin(player1.name);
-          recordLoss(player2.name);
+          await recordWin(player1.name);
+          await recordLoss(player2.name);
         }
       } else if (result === 'tie') {
         winnerId = null;
         if (!botPlayers.has(roomId)) {
-          recordTie(player1.name);
-          recordTie(player2.name);
+          await recordTie(player1.name);
+          await recordTie(player2.name);
         }
       } else {
         winnerId = player2.id;
         player2.score += 1;
         if (!botPlayers.has(roomId)) {
-          recordWin(player2.name);
-          recordLoss(player1.name);
+          await recordWin(player2.name);
+          await recordLoss(player1.name);
         }
       }
 
@@ -430,8 +430,9 @@ io.on('connection', (socket) => {
 
   // ============ LEADERBOARD EVENTS ============
   
-  socket.on('get_leaderboard', () => {
-    socket.emit('leaderboard', getLeaderboard());
+  socket.on('get_leaderboard', async () => {
+    const leaderboard = await getLeaderboard();
+    socket.emit('leaderboard', leaderboard);
   });
 
   // ============ TOURNAMENT EVENTS ============
@@ -536,6 +537,14 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+
+// Initialize database and start server
+const startServer = async () => {
+  await initDatabase();
+  
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+};
+
+startServer();

@@ -4,7 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { HandSelection } from './HandSelection';
 import { RetroBackground } from './RetroBackground';
 import { AsciiDisplay } from './AsciiArt';
-import sounds from '../utils/sounds';
+import sounds, { music } from '../utils/sounds';
 import type { GameState } from '@shared/types';
 
 interface GameScreenProps {
@@ -32,9 +32,29 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
   const [showResult, setShowResult] = useState(false);
   const [isRevealing, setIsRevealing] = useState(false);
   const [gameWinner, setGameWinner] = useState<'me' | 'opponent' | null>(null);
+  const [musicEnabled, setMusicEnabled] = useState(true);
 
   const myPlayer = gameState.players.find(p => p.id === myId);
   const opponentPlayer = gameState.players.find(p => p.id === opponentId);
+
+  // Start/stop background music
+  useEffect(() => {
+    if (musicEnabled) {
+      music.start();
+    } else {
+      music.stop();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      music.stop();
+    };
+  }, [musicEnabled]);
+
+  const toggleMusic = () => {
+    setMusicEnabled(prev => !prev);
+    sounds.click();
+  };
 
   // Check for game winner
   useEffect(() => {
@@ -138,6 +158,21 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
       <div className="min-h-screen p-4 relative overflow-hidden">
         <RetroBackground />
         <div className="fixed inset-0 pointer-events-none z-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyIiBoZWlnaHQ9IjIiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4xKSIvPjwvc3ZnPg==')] opacity-30" />
+        {/* Music Toggle on Game Over */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleMusic}
+          className={`fixed top-4 right-4 z-30 bg-black border-2 font-mono py-2 px-4 transition-all ${
+            musicEnabled 
+              ? 'border-green-500/50 hover:border-green-500 text-green-400' 
+              : 'border-gray-500/50 hover:border-gray-500 text-gray-400'
+          }`}
+        >
+          {musicEnabled ? '♪ ON' : '♪ OFF'}
+        </motion.button>
         <div className="max-w-4xl mx-auto relative z-20 flex flex-col items-center justify-center min-h-screen">
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -235,7 +270,7 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
       {/* CRT Overlay */}
       <div className="fixed inset-0 pointer-events-none z-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyIiBoZWlnaHQ9IjIiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4xKSIvPjwvc3ZnPg==')] opacity-30" />
       <div className="max-w-4xl mx-auto relative z-20">
-        {/* Header with Quit Button */}
+        {/* Header with Music and Quit Buttons */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -246,14 +281,28 @@ export const GameScreen = ({ gameState, myId, opponentId, playerName, onPlayAgai
 ║  R.P.S. ARENA  [Best of 3] ║
 ╚═══════════════════════════╝`}
           </pre>
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { sounds.click(); onQuit(); }}
-            className="bg-black border-2 border-red-500/50 hover:border-red-500 text-red-400 font-mono py-2 px-4 transition-all"
-          >
-            [X] QUIT
-          </motion.button>
+          <div className="flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: musicEnabled ? '0 0 15px rgba(34, 197, 94, 0.5)' : '0 0 15px rgba(156, 163, 175, 0.5)' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleMusic}
+              className={`bg-black border-2 font-mono py-2 px-4 transition-all ${
+                musicEnabled 
+                  ? 'border-green-500/50 hover:border-green-500 text-green-400' 
+                  : 'border-gray-500/50 hover:border-gray-500 text-gray-400'
+              }`}
+            >
+              {musicEnabled ? '♪ ON' : '♪ OFF'}
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { sounds.click(); onQuit(); }}
+              className="bg-black border-2 border-red-500/50 hover:border-red-500 text-red-400 font-mono py-2 px-4 transition-all"
+            >
+              [X] QUIT
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* Score Board */}

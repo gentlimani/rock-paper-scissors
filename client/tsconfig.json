@@ -20,8 +20,8 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
-    }
+    },
+    "types": ["vite/client"]
   },
-  "include": ["src"],
-  "references": [{ "path": "../shared" }]
+  "include": ["src", "../shared"]
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSocket } from '../context/SocketContext';
-import type { Tournament, TournamentMatch } from '@shared/types';
+import type { Tournament, TournamentMatch, TournamentPlayer } from '@shared/types';
 
 interface TournamentBracketProps {
   onClose: () => void;
@@ -72,15 +72,15 @@ export const TournamentBracket = ({ onClose, playerName }: TournamentBracketProp
   };
 
   const isPlayerInTournament = (tournament: Tournament) => {
-    return tournament.players.some(p => p.name === playerName);
+    return tournament.players.some((p: { name: string }) => p.name === playerName);
   };
 
   const renderBracket = (tournament: Tournament) => {
     const rounds: TournamentMatch[][] = [];
-    const maxRound = Math.max(...tournament.matches.map(m => m.round));
+    const maxRound = Math.max(...tournament.matches.map((m: TournamentMatch) => m.round));
     
     for (let r = 1; r <= maxRound; r++) {
-      rounds.push(tournament.matches.filter(m => m.round === r));
+      rounds.push(tournament.matches.filter((m: TournamentMatch) => m.round === r));
     }
 
     return (
@@ -202,7 +202,7 @@ export const TournamentBracket = ({ onClose, playerName }: TournamentBracketProp
             <div className="text-center py-8">
               <h3 className="text-xl text-white mb-4">Waiting Room</h3>
               <div className="flex flex-wrap justify-center gap-3 mb-6">
-                {selectedTournament.players.map((player, i) => (
+                {selectedTournament.players.map((player: TournamentPlayer, i: number) => (
                   <motion.div
                     key={player.id}
                     initial={{ scale: 0 }}

@@ -65,12 +65,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       setIsSearching(false);
       setOpponentId(data.opponentId);
       // Initialize game state only if new game (preserve scores for play again)
-      setGameState((prev) => {
+      setGameState((prev: GameState | null) => {
         // If same room, keep existing scores
         if (prev && prev.roomId === data.roomId) {
           return {
             ...prev,
-            status: 'waiting',
+            status: 'waiting' as const,
             moves: {},
           };
         }
@@ -81,7 +81,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             { id: socketInstance.id!, score: 0 },
             { id: data.opponentId, score: 0 },
           ],
-          status: 'waiting',
+          status: 'waiting' as const,
           moves: {},
         };
       });
@@ -90,7 +90,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     socketInstance.on('game_start', (data) => {
       console.log('Game started:', data);
       // Preserve client-side scores if they exist
-      setGameState((prev) => {
+      setGameState((prev: GameState | null) => {
         if (prev && prev.roomId === data.roomId) {
           return {
             ...data,
@@ -104,11 +104,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     socketInstance.on('round_result', (data) => {
       console.log('Round result:', data);
       // Update game state with new scores
-      setGameState((prev) => {
+      setGameState((prev: GameState | null) => {
         if (!prev) return null;
         const updated = { ...prev, players: [...prev.players] };
         if (data.winnerId) {
-          const winner = updated.players.find(p => p.id === data.winnerId);
+          const winner = updated.players.find((p: { id: string; score: number }) => p.id === data.winnerId);
           if (winner) {
             winner.score += 1;
           }
